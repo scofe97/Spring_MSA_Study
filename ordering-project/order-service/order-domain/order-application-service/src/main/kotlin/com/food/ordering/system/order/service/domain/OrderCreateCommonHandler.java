@@ -32,16 +32,20 @@ public class OrderCreateCommonHandler {
 
     private final OrderDataMapper orderDataMapper;
 
+    private final ApplicationDomainEventPublisher applicationDomainEventPublisher;
+
     public OrderCreateCommonHandler(OrderDomainService orderDomainService,
                                     OrderRepository orderRepository,
                                     CustomerRepository customerRepository,
                                     RestaurantRepository restaurantRepository,
-                                    OrderDataMapper orderDataMapper) {
+                                    OrderDataMapper orderDataMapper,
+                                    ApplicationDomainEventPublisher applicationDomainEventPublisher) {
         this.orderDomainService = orderDomainService;
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
         this.restaurantRepository = restaurantRepository;
         this.orderDataMapper = orderDataMapper;
+        this.applicationDomainEventPublisher = applicationDomainEventPublisher;
     }
 
     @Transactional
@@ -52,6 +56,8 @@ public class OrderCreateCommonHandler {
         OrderCreatedEvent orderCreatedEvent = orderDomainService.validateAndInitiateOrder(order, restaurant);
         Order orderResult = saveOrder(order);
         log.info("주문의 생성되었다. id : {}", orderResult.getId().getValue());
+
+        applicationDomainEventPublisher.publish(orderCreatedEvent);
 
         return orderDataMapper.orderToCreateOrderResponse(orderResult);
     }
